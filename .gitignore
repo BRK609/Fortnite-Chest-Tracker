@@ -1,0 +1,64 @@
+
+# Compilation et fichiers temporaires
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.suo
+
+# Données personnelles et statistiques
+data/*
+!data/.gitkeep
+player_profile.json
+statistics*.db
+*.db-shm
+*.db-wal
+
+# Replays et sauvegardes
+backups/
+*.replay
+
+# Exécutable distribué séparément dans les Releases
+/FortniteChestTracker.exe
+
+# Fichiers sensibles
+.env
+.env.*
+*.pfx
+*.pem
+*.key
+
+# Journaux et fichiers système
+*.log
+Thumbs.db
+.DS_Store
+
+# Fichiers Python temporaires
+__pycache__/
+*.py[cod]
+
+# Sauvegardes locales
+backup_upgrade/
+
+# Dumps generes par les replays
+cmds/
+*.bak
+
+# Anciens outils et projets de test
+FortniteReplayDecompressor/
+PlayerDetectionTest/
+watcher/
+database.py
+diagnostic.py
+import_results.py
+replay_scanner.py
+
+# Bases de données locales
+*.db
+*.sqlite
+*.sqlite3
+
+# Outils de vérification temporaires
+DatabaseCheck/FortniteChestTracker-Test.exe
+
+/FortniteChestTracker-Test.exe
