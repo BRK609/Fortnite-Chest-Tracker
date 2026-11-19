@@ -1,10 +1,20 @@
 # Fortnite Chest Tracker
 
-**Fortnite Chest Tracker** est une application Windows permettant de suivre les coffres ouverts et détruits dans Fortnite grâce à l'analyse des fichiers replay.
+**Fortnite Chest Tracker** est une application Windows qui permet de suivre les coffres ouverts et détruits dans Fortnite grâce à l'analyse des fichiers replay.
+
+## Télécharger
+
+**[Télécharger Fortnite Chest Tracker v1.3](https://github.com/BRK609/Fortnite-Chest-Tracker/releases/tag/v1.3)**
+
+Téléchargez `FortniteChestTracker.exe` depuis la page des Releases, puis lancez le fichier.
+
+- Windows 10 / 11
+- Architecture 64 bits
+- Aucune installation manuelle de .NET nécessaire
 
 ## Fonctionnalités
 
-- Analyse automatique des replays Fortnite.
+- Analyse des replays Fortnite.
 - Comptabilisation des coffres ouverts et détruits.
 - Historique des parties analysées.
 - Statistiques personnelles.
@@ -12,40 +22,39 @@
 - Sélection du joueur à analyser à partir des données du replay.
 - Sauvegarde locale des statistiques.
 
-## Installation
+## Installation et utilisation
 
-1. Ouvrir la section **Releases** de ce dépôt GitHub.
-2. Télécharger `FortniteChestTracker.exe`.
-3. Lancer l'application.
-
-Aucune installation manuelle de .NET n'est normalement nécessaire avec la version autonome distribuée.
+1. Téléchargez `FortniteChestTracker.exe` depuis les [Releases](https://github.com/BRK609/Fortnite-Chest-Tracker/releases).
+2. Lancez l'application.
+3. Configurez Fortnite pour enregistrer les replays.
+4. Jouez vos parties et laissez l'application analyser les replays disponibles.
 
 ## Configuration de Fortnite
 
 Pour que l'application puisse analyser les parties :
 
-1. Ouvrir les paramètres de Fortnite.
-2. Aller dans la section **Jeu**.
-3. Activer l'option de sauvegarde des replays.
-4. Jouer une partie.
+1. Ouvrez les paramètres de Fortnite.
+2. Rendez-vous dans la section **Jeu**.
+3. Activez l'option de sauvegarde des replays.
+4. Jouez une partie.
 
 Les parties jouées avant l'activation de cette option ne peuvent pas être récupérées sous forme de replay.
 
 ## Données et confidentialité
 
-Les statistiques et le profil du joueur sont enregistrés localement sur l'ordinateur de l'utilisateur.
+Les statistiques et le profil du joueur sont enregistrés localement sur l'ordinateur.
 
-L'application utilise le dossier :
+Dossier utilisé par la version publique :
 
-`%LOCALAPPDATA%\FortniteChestTracker`
+`%LOCALAPPDATA%\FortniteChestTracker-GitHub`
 
-Les données personnelles et les fichiers replay ne sont pas inclus dans le dépôt public.
+Les statistiques et les fichiers replay personnels ne sont pas publiés dans le dépôt GitHub.
 
 ## Informations techniques
 
 - Langage : C#
 - Framework : .NET 10
-- Plateforme : Windows 10/11
+- Plateforme : Windows 10 / 11
 - Architecture : x64
 
 ## Crédits
