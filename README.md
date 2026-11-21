@@ -4,9 +4,9 @@
 
 ## Télécharger
 
-**[Télécharger Fortnite Chest Tracker v1.3](https://github.com/BRK609/Fortnite-Chest-Tracker/releases/tag/v1.3)**
+**[Télécharger Fortnite Chest Tracker v1.4](https://github.com/BRK609/Fortnite-Chest-Tracker/releases/download/v1.4/FortniteChestTracker-v1.4-win-x64.zip)**
 
-Téléchargez `FortniteChestTracker.exe` depuis la page des Releases, puis lancez le fichier.
+Téléchargez `FortniteChestTracker-v1.4-win-x64.zip` depuis la page des Releases, extrayez l'archive, puis lancez `FortniteChestTracker.exe`.
 
 - Windows 10 / 11
 - Architecture 64 bits
@@ -24,7 +24,7 @@ Téléchargez `FortniteChestTracker.exe` depuis la page des Releases, puis lance
 
 ## Installation et utilisation
 
-1. Téléchargez `FortniteChestTracker.exe` depuis les [Releases](https://github.com/BRK609/Fortnite-Chest-Tracker/releases).
+1. Téléchargez `FortniteChestTracker-v1.4-win-x64.zip` depuis les [Releases](https://github.com/BRK609/Fortnite-Chest-Tracker/releases), extrayez l'archive, puis lancez `FortniteChestTracker.exe`.
 2. Lancez l'application.
 3. Configurez Fortnite pour enregistrer les replays.
 4. Jouez vos parties et laissez l'application analyser les replays disponibles.
