@@ -4,6 +4,9 @@ using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
 using Microsoft.Data.Sqlite;
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
+using System.Text.Json;
 using FortniteReplayReader.Models;
 
 namespace app;
@@ -30,13 +33,15 @@ public partial class Form1 : Form
     private static string ProfilePath => AppPaths.ProfilePath;
     private static string DatabasePath => AppPaths.DatabasePath;
 
-    private const string AppVersion = "1.3";
+    private const string AppVersion = "1.4";
 
     // =========================================================
     // INTERFACE
     // =========================================================
 
     private Panel contentPanel = null!;
+    private WebView2 webView = null!;
+    private bool webViewReady = false;
     private Panel sidebarPanel = null!;
     private Label pageTitle = null!;
     private Label headerStatus = null!;
@@ -65,6 +70,11 @@ public partial class Form1 : Form
     private WatcherService? watcherService;
     private bool closeInProgress;
     private bool allowClose;
+
+    private TaskCompletionSource<WatcherService.PlayerSelection?>?
+        pendingPlayerSelection;
+
+    private List<PlayerData>? pendingPlayerChoices;
 
     private sealed class PlayerProfile
     {
@@ -101,6 +111,167 @@ public partial class Form1 : Form
         AddLog("Profil actuel : " + currentUsername);
 
         FormClosing += Form1_FormClosing;
+        webView = new WebView2
+        {
+            Dock = DockStyle.Fill
+        };
+
+        Controls.Add(webView);
+        webView.BringToFront();
+
+        Shown += async (_, _) => await InitializeWebViewAsync();
+    }
+
+    private async Task InitializeWebViewAsync()
+    {
+        try
+        {
+            string webFolder = Path.Combine(AppContext.BaseDirectory, "Web");
+
+            if (!File.Exists(Path.Combine(webFolder, "index.html")))
+            {
+                throw new FileNotFoundException(
+                    "Le fichier Web/index.html est introuvable.",
+                    webFolder
+                );
+            }
+
+            await webView.EnsureCoreWebView2Async();
+
+            webView.CoreWebView2.SetVirtualHostNameToFolderMapping(
+                "appassets.example",
+                webFolder,
+                CoreWebView2HostResourceAccessKind.Allow
+            );
+
+            webView.CoreWebView2.WebMessageReceived += WebView_WebMessageReceived;
+
+            webView.CoreWebView2.Navigate(
+                "https://appassets.example/index.html"
+            );
+
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                "Impossible de charger la nouvelle interface :\n\n" + ex.Message,
+                "Fortnite Chest Tracker",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
+        }
+    }
+
+    private void WebView_WebMessageReceived(
+        object? sender,
+        CoreWebView2WebMessageReceivedEventArgs e)
+    {
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(e.WebMessageAsJson);
+
+            JsonElement root = document.RootElement;
+
+            if (!root.TryGetProperty("type", out JsonElement typeElement))
+                return;
+
+            string? type = typeElement.GetString();
+
+            if (type == "ready")
+            {
+                webViewReady = true;
+                AddLog("Nouvelle interface Web chargée.");
+                RefreshStatistics();
+            }
+            else if (type == "watcherToggle")
+            {
+                WatcherButton_Click(null, EventArgs.Empty);
+            }
+            else if (type == "playerSelection")
+            {
+                if (!root.TryGetProperty("index", out JsonElement indexElement) ||
+                    !indexElement.TryGetInt32(out int index))
+                    return;
+
+                if (pendingPlayerChoices == null ||
+                    index < 0 ||
+                    index >= pendingPlayerChoices.Count)
+                    return;
+
+                var player = pendingPlayerChoices[index];
+
+                var selected = new WatcherService.PlayerSelection(
+                    player.PlayerName ?? "",
+                    player.EpicId
+                );
+
+                pendingPlayerChoices = null;
+
+                var completion = pendingPlayerSelection;
+                pendingPlayerSelection = null;
+
+                completion?.TrySetResult(selected);
+            }
+            else if (type == "playerSelectionCancel")
+            {
+                pendingPlayerChoices = null;
+
+                var completion = pendingPlayerSelection;
+                pendingPlayerSelection = null;
+
+                completion?.TrySetResult(null);
+            }
+            else if (type == "navigate")
+            {
+                if (!root.TryGetProperty("page", out JsonElement pageElement))
+                    return;
+
+                string? page = pageElement.GetString();
+
+                string[] allowedPages =
+                {
+                    "dashboard",
+                    "history",
+                    "statistics",
+                    "profile"
+                };
+
+                if (page != null && allowedPages.Contains(page))
+                {
+                    AddLog("Navigation : " + page);
+
+                    if (page == "history")
+                    {
+                        SendHistoryToWeb();
+                    }
+                    else if (page == "statistics")
+                    {
+                        SendStatisticsToWeb();
+                    }
+                }
+            }
+
+            else if (type == "historyRequest")
+            {
+                string search = root.TryGetProperty("search", out var searchElement)
+                    ? searchElement.GetString() ?? ""
+                    : "";
+
+                string dateFilter = root.TryGetProperty("dateFilter", out var dateElement)
+                    ? dateElement.GetString() ?? "all"
+                    : "all";
+
+                string sort = root.TryGetProperty("sort", out var sortElement)
+                    ? sortElement.GetString() ?? "recent"
+                    : "recent";
+
+                SendHistoryToWeb(search, dateFilter, sort);
+            }
+        }
+        catch (Exception ex)
+        {
+            AddLog("Erreur de communication Web : " + ex.Message);
+        }
     }
 
     // =========================================================
@@ -667,16 +838,49 @@ public partial class Form1 : Form
         service.RunningChanged += running =>
             RunOnUiThread(() => SetWatcherUi(running));
 
-        service.PlayerSelectionRequested += players =>
+        service.PlayerSelectionRequested += async players =>
         {
             var completion =
-                new TaskCompletionSource<WatcherService.PlayerSelection?>();
+                new TaskCompletionSource<WatcherService.PlayerSelection?>(
+                    TaskCreationOptions.RunContinuationsAsynchronously
+                );
 
             RunOnUiThread(() =>
             {
-                var selected = ShowPlayerSelectionDialog(players);
+                pendingPlayerChoices = players;
+                pendingPlayerSelection = completion;
 
-                if (selected != null)
+                if (!webViewReady || webView.CoreWebView2 == null)
+                {
+                    pendingPlayerChoices = null;
+                    pendingPlayerSelection = null;
+                    completion.TrySetResult(null);
+                    return;
+                }
+
+                var message = new
+                {
+                    type = "showPlayerSelection",
+                    players = players.Select((player, index) => new
+                    {
+                        index,
+                        username = player.PlayerName ?? "",
+                        epicId = string.IsNullOrWhiteSpace(player.EpicId)
+                            ? "Epic ID indisponible"
+                            : player.EpicId
+                    }).ToList()
+                };
+
+                webView.CoreWebView2.PostWebMessageAsJson(
+                    JsonSerializer.Serialize(message)
+                );
+            });
+
+            var selected = await completion.Task;
+
+            if (selected != null)
+            {
+                RunOnUiThread(() =>
                 {
                     currentUsername = selected.Username;
                     currentEpicId = selected.EpicId;
@@ -686,12 +890,10 @@ public partial class Form1 : Form
 
                     if (profileName != null && !profileName.IsDisposed)
                         profileName.Text = "Pseudo : " + currentUsername;
-                }
+                });
+            }
 
-                completion.TrySetResult(selected);
-            });
-
-            return completion.Task;
+            return selected;
         };
 
         return service;
@@ -726,6 +928,20 @@ public partial class Form1 : Form
             watcherButton.BackColor = running
                 ? Color.FromArgb(100, 40, 48)
                 : red;
+        }
+
+        if (webViewReady && webView != null &&
+            !webView.IsDisposed && webView.CoreWebView2 != null)
+        {
+            var message = new
+            {
+                type = "watcherState",
+                running = running
+            };
+
+            webView.CoreWebView2.PostWebMessageAsJson(
+                JsonSerializer.Serialize(message)
+            );
         }
     }
 
@@ -776,12 +992,316 @@ public partial class Form1 : Form
 
             if (gamesValue != null && !gamesValue.IsDisposed)
                 gamesValue.Text = games.ToString("N0");
+            
+            SendDashboardToWeb(opened, destroyed, games);
         }
         catch (Exception ex)
         {
             AddLog("[ERREUR STATISTIQUES] " + ex.Message);
         }
     }
+
+    
+    private void SendDashboardToWeb(long opened, long destroyed, long games)
+    {
+        if (!webViewReady || webView.IsDisposed || webView.CoreWebView2 == null)
+            return;
+
+        try
+        {
+            var recentActivity = new List<object>();
+
+            if (File.Exists(DatabasePath))
+            {
+                using var connection = new SqliteConnection(
+                    $"Data Source={DatabasePath}");
+
+                connection.Open();
+
+                using var command = connection.CreateCommand();
+
+                command.CommandText = """
+                    SELECT
+                        filename,
+                        COALESCE(match_date, analyzed_at, first_seen),
+                        chests_opened,
+                        chests_destroyed
+                    FROM replays
+                    WHERE status = 'analyzed'
+                    ORDER BY COALESCE(match_date, analyzed_at, first_seen) DESC
+                    LIMIT 5
+                    """;
+
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    recentActivity.Add(new
+                    {
+                        filename = Convert.ToString(reader.GetValue(0)) ?? "",
+                        date = Convert.ToString(reader.GetValue(1)) ?? "",
+                        opened = Convert.ToInt64(reader.GetValue(2)),
+                        destroyed = Convert.ToInt64(reader.GetValue(3))
+                    });
+                }
+            }
+
+            var message = new
+            {
+                type = "dashboard",
+                data = new
+                {
+                    opened,
+                    destroyed,
+                    games,
+                    recentActivity,
+                    playerName = string.IsNullOrWhiteSpace(currentUsername)
+                        ? "Aucun joueur sélectionné"
+                        : currentUsername,
+                    watcherRunning = watcherService?.IsRunning == true
+                }
+            };
+
+            webView.CoreWebView2.PostWebMessageAsJson(
+                JsonSerializer.Serialize(message)
+            );
+        }
+        catch (Exception ex)
+        {
+            AddLog("[ERREUR INTERFACE WEB] " + ex.Message);
+        }
+    }
+
+
+    private void SendHistoryToWeb(
+        string search = "",
+        string dateFilter = "all",
+        string sort = "recent")
+    {
+        if (!webViewReady || webView.IsDisposed ||
+            webView.CoreWebView2 == null)
+            return;
+
+        try
+        {
+            using var connection = new SqliteConnection(
+                $"Data Source={DatabasePath}");
+
+            connection.Open();
+
+            string dateCondition = dateFilter switch
+            {
+                "7" => "AND datetime(COALESCE(match_date, analyzed_at, first_seen)) >= datetime('now', '-7 days')",
+                "30" => "AND datetime(COALESCE(match_date, analyzed_at, first_seen)) >= datetime('now', '-30 days')",
+                _ => ""
+            };
+
+            string orderBy = sort switch
+            {
+                "total-desc" => "ORDER BY (chests_opened + chests_destroyed) DESC",
+                "total-asc" => "ORDER BY (chests_opened + chests_destroyed) ASC",
+                "opened-desc" => "ORDER BY chests_opened DESC",
+                "destroyed-desc" => "ORDER BY chests_destroyed DESC",
+                _ => "ORDER BY datetime(COALESCE(match_date, analyzed_at, first_seen)) DESC"
+            };
+
+            string sql = $"""
+                SELECT
+                    sha256,
+                    filename,
+                    COALESCE(match_date, analyzed_at, first_seen),
+                    chests_opened,
+                    chests_destroyed
+                FROM replays
+                WHERE status = 'analyzed'
+                AND ($search = '' OR filename LIKE $pattern)
+                {dateCondition}
+                {orderBy}
+                """;
+
+            var replays = new List<object>();
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = sql;
+                command.Parameters.AddWithValue("$search", search.Trim());
+                command.Parameters.AddWithValue(
+                    "$pattern", "%" + search.Trim() + "%");
+
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    long opened = Convert.ToInt64(reader.GetValue(3));
+                    long destroyed = Convert.ToInt64(reader.GetValue(4));
+
+                    replays.Add(new
+                    {
+                        sha256 = Convert.ToString(reader.GetValue(0)) ?? "",
+                        filename = Convert.ToString(reader.GetValue(1)) ?? "Replay inconnu",
+                        date = reader.IsDBNull(2)
+                            ? "Date inconnue"
+                            : Convert.ToString(reader.GetValue(2)) ?? "Date inconnue",
+                        opened,
+                        destroyed,
+                        total = opened + destroyed
+                    });
+                }
+            }
+
+            using var summaryCommand = connection.CreateCommand();
+
+            summaryCommand.CommandText = $"""
+                SELECT
+                    COUNT(*),
+                    COALESCE(SUM(chests_opened), 0),
+                    COALESCE(SUM(chests_destroyed), 0)
+                FROM replays
+                WHERE status = 'analyzed'
+                AND ($search = '' OR filename LIKE $pattern)
+                {dateCondition}
+                """;
+
+            summaryCommand.Parameters.AddWithValue("$search", search.Trim());
+            summaryCommand.Parameters.AddWithValue(
+                "$pattern", "%" + search.Trim() + "%");
+
+            long games;
+            long openedTotal;
+            long destroyedTotal;
+
+            using (var reader = summaryCommand.ExecuteReader())
+            {
+                reader.Read();
+                games = Convert.ToInt64(reader.GetValue(0));
+                openedTotal = Convert.ToInt64(reader.GetValue(1));
+                destroyedTotal = Convert.ToInt64(reader.GetValue(2));
+            }
+
+            var message = new
+            {
+                type = "history",
+                data = new
+                {
+                    replays,
+                    games,
+                    opened = openedTotal,
+                    destroyed = destroyedTotal,
+                    total = openedTotal + destroyedTotal
+                }
+            };
+
+            webView.CoreWebView2.PostWebMessageAsJson(
+                JsonSerializer.Serialize(message));
+        }
+        catch (Exception ex)
+        {
+            AddLog("[ERREUR HISTORIQUE WEB] " + ex.Message);
+        }
+    }
+
+
+    private void SendStatisticsToWeb()
+    {
+        if (!webViewReady || webView.IsDisposed ||
+            webView.CoreWebView2 == null)
+            return;
+
+        if (!File.Exists(DatabasePath))
+            return;
+
+        try
+        {
+            using var connection = new SqliteConnection(
+                $"Data Source={DatabasePath}");
+
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+
+            command.CommandText = """
+                SELECT
+                    COUNT(*),
+                    COALESCE(SUM(chests_opened), 0),
+                    COALESCE(SUM(chests_destroyed), 0),
+                    COALESCE(MAX(chests_opened + chests_destroyed), 0),
+                    COALESCE(AVG(chests_opened + chests_destroyed), 0)
+                FROM replays
+                WHERE status = 'analyzed'
+                """;
+
+            long games;
+            long opened;
+            long destroyed;
+            long best;
+            double average;
+
+            using (var reader = command.ExecuteReader())
+            {
+                if (!reader.Read())
+                    return;
+
+                games = Convert.ToInt64(reader.GetValue(0));
+                opened = Convert.ToInt64(reader.GetValue(1));
+                destroyed = Convert.ToInt64(reader.GetValue(2));
+                best = Convert.ToInt64(reader.GetValue(3));
+                average = Convert.ToDouble(reader.GetValue(4));
+            }
+
+            var activity = new List<object>();
+
+            using var activityCommand = connection.CreateCommand();
+
+            activityCommand.CommandText = """
+                SELECT
+                    filename,
+                    chests_opened,
+                    chests_destroyed
+                FROM replays
+                WHERE status = 'analyzed'
+                ORDER BY datetime(COALESCE(match_date, analyzed_at, first_seen)) DESC
+                LIMIT 10
+                """;
+
+            using (var reader = activityCommand.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    long replayOpened = Convert.ToInt64(reader.GetValue(1));
+                    long replayDestroyed = Convert.ToInt64(reader.GetValue(2));
+
+                    activity.Add(new
+                    {
+                        filename = Convert.ToString(reader.GetValue(0)) ?? "",
+                        total = replayOpened + replayDestroyed
+                    });
+                }
+            }
+
+            var message = new
+            {
+                type = "statistics",
+                data = new
+                {
+                    games,
+                    opened,
+                    destroyed,
+                    total = opened + destroyed,
+                    best,
+                    average,
+                    activity
+                }
+            };
+
+            webView.CoreWebView2.PostWebMessageAsJson(
+                JsonSerializer.Serialize(message));
+        }
+        catch (Exception ex)
+        {
+            AddLog("[ERREUR STATISTIQUES WEB] " + ex.Message);
+        }
+    }
+
 
     // =========================================================
     // HISTORIQUE AVANCÉ

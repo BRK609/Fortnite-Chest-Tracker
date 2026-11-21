@@ -1,0 +1,369 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortnite Chest Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">F</div>
+            <div>
+                <h2>CHEST<span>TRACKER</span></h2>
+                <small>FORTNITE ANALYTICS</small>
+            </div>
+        </div>
+
+        <div class="nav-label">MENU PRINCIPAL</div>
+
+        <nav>
+            <button class="nav-item active" data-page="dashboard">
+                Vue d'ensemble
+            </button>
+            <button class="nav-item" data-page="history">
+                Historique
+            </button>
+            <button class="nav-item" data-page="statistics">
+                Statistiques
+            </button>
+            <button class="nav-item" data-page="profile">
+                Mon profil
+            </button>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="connection">
+                <span class="status-dot"></span>
+                <div>
+                    <strong>Tracker actif</strong>
+                    <small>Application locale</small>
+                </div>
+            </div>
+            <div class="version">FORTNITE CHEST TRACKER · v1.4</div>
+        </div>
+    </aside>
+
+    <main class="main">
+
+        <header class="topbar">
+            <div>
+                <div class="breadcrumb">ESPACE PERSONNEL / <span id="breadcrumb">ACCUEIL</span></div>
+                <h1 id="page-title">Vue d'ensemble</h1>
+            </div>
+            <div class="top-actions">
+                <div class="live-badge"><span></span> SYSTÈME OPÉRATIONNEL</div>
+                <div class="avatar">BRK</div>
+            </div>
+        </header>
+
+        <section class="page active" id="dashboard">
+
+            <div class="welcome">
+                <div>
+                    <span class="eyebrow">TABLEAU DE BORD</span>
+                    <h2>Bienvenue sur <span>Chest Tracker.</span></h2>
+                    <p>Retrouve toutes tes statistiques Fortnite au même endroit.</p>
+                </div>
+                <div class="welcome-decoration">FORTNITE</div>
+            </div>
+
+            <div class="section-heading">
+                <div>
+                    <h3>Vue générale</h3>
+                    <p>Résumé de ton activité</p>
+                </div>
+                <span class="period">TOUTES LES PARTIES</span>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>COFFRES OUVERTS</span>
+                    </div>
+                    <div class="stat-value" id="opened">0</div>
+                    <div class="stat-footer">Total enregistré</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>COFFRES DÉTRUITS</span>
+                    </div>
+                    <div class="stat-value" id="destroyed">0</div>
+                    <div class="stat-footer">Total enregistré</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>TOTAL DES COFFRES</span>
+                    </div>
+                    <div class="stat-value" id="total">0</div>
+                    <div class="stat-footer">Ouverts et détruits</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>PARTIES ANALYSÉES</span>
+                    </div>
+                    <div class="stat-value" id="games">0</div>
+                    <div class="stat-footer">Historique complet</div>
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h3>Activité récente</h3>
+                            <p>Suivi de tes dernières analyses</p>
+                        </div>
+                        <span class="panel-tag">EN DIRECT</span>
+                    </div>
+                    <div id="activity" class="activity">
+                        <div class="empty-state">
+                            <div class="empty-icon">⌁</div>
+                            <strong>Aucune activité récente</strong>
+                            <p>Les nouvelles analyses apparaîtront ici.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel player-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h3>Profil joueur</h3>
+                            <p>Ton compte sélectionné</p>
+                        </div>
+                    </div>
+                    <div class="player-avatar">BRK</div>
+                    <h2 id="player-name">Joueur non sélectionné</h2>
+                    <span class="player-label">PROFIL FORTNITE</span>
+                    <div class="player-divider"></div>
+                    <div class="player-info">
+                        <span>État du suivi</span>
+                        <strong id="tracker-status">En attente</strong>
+                    </div>
+                    <button class="primary-button" id="watcher-toggle">
+                        Démarrer la surveillance
+                        <span>▶</span>
+                    </button>
+                    <button class="primary-button" data-page="profile">Voir mon profil <span>→</span></button>
+                </div>
+            </div>
+
+        </section>
+
+        
+        <section class="page" id="history">
+            <div class="section-heading">
+                <div>
+                    <h3>Historique des parties</h3>
+                    <p>Retrouve et consulte toutes tes parties analysées.</p>
+                </div>
+            </div>
+
+            <div class="panel history-panel">
+                <div class="history-toolbar">
+                    <input
+                        type="text"
+                        id="history-search"
+                        placeholder="Rechercher un replay..."
+                    >
+
+                    <select id="history-date-filter">
+                        <option value="all">Toutes les périodes</option>
+                        <option value="7">7 derniers jours</option>
+                        <option value="30">30 derniers jours</option>
+                    </select>
+
+                    <select id="history-sort">
+                        <option value="recent">Plus récentes</option>
+                        <option value="total-desc">Plus de coffres</option>
+                        <option value="total-asc">Moins de coffres</option>
+                        <option value="opened-desc">Plus de coffres ouverts</option>
+                        <option value="destroyed-desc">Plus de coffres détruits</option>
+                    </select>
+
+                    <select id="history-page-size">
+                        <option value="10" selected>10 par page</option>
+                        <option value="25">25 par page</option>
+                        <option value="50">50 par page</option>
+                        <option value="100">100 par page</option>
+                    </select>
+                </div>
+
+                <div class="history-summary">
+                    <span id="history-count">0 partie</span>
+                    <span id="history-total">0 coffre au total</span>
+                </div>
+
+                <div class="history-table-container">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>REPLAY</th>
+                                <th>DATE</th>
+                                <th>OUVERTS</th>
+                                <th>DÉTRUITS</th>
+                                <th>TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <tr>
+                                <td colspan="5" class="history-empty">
+                                    Chargement de l'historique...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="history-pagination">
+                    <button id="history-prev" class="secondary-button" disabled>
+                        ← Précédent
+                    </button>
+
+                    <span id="history-page-info">Page 1 sur 1</span>
+
+                    <button id="history-next" class="secondary-button" disabled>
+                        Suivant →
+                    </button>
+                </div>
+            </div>
+        </section>
+
+
+        
+        <section class="page" id="statistics">
+            <div class="section-heading">
+                <div>
+                    <h3>Statistiques détaillées</h3>
+                    <p>Analyse complète de tes performances.</p>
+                </div>
+            </div>
+
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>COFFRES OUVERTS</span>
+                    </div>
+                    <div class="stat-value" id="stats-opened">0</div>
+                    <div class="stat-footer">Depuis le début du suivi</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>COFFRES DÉTRUITS</span>
+                    </div>
+                    <div class="stat-value" id="stats-destroyed">0</div>
+                    <div class="stat-footer">Depuis le début du suivi</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>TOTAL DES COFFRES</span>
+                    </div>
+                    <div class="stat-value" id="stats-total">0</div>
+                    <div class="stat-footer">Ouverts + détruits</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>PARTIES ANALYSÉES</span>
+                    </div>
+                    <div class="stat-value" id="stats-games">0</div>
+                    <div class="stat-footer">Replays enregistrés</div>
+                </div>
+            </div>
+
+
+            <div class="stats-details-grid">
+                <div class="panel stats-panel">
+                    <h3>Moyenne par partie</h3>
+                    <div class="stats-highlight" id="stats-average">0</div>
+                    <p>Coffres par partie</p>
+                </div>
+
+                <div class="panel stats-panel">
+                    <h3>Meilleure partie</h3>
+                    <div class="stats-highlight" id="stats-best">0</div>
+                    <p>Coffres dans une seule partie</p>
+                </div>
+
+                <div class="panel stats-panel">
+                    <h3>Répartition</h3>
+                    <div class="stats-breakdown">
+                        <div class="stats-breakdown-row">
+                            <span>Coffres ouverts</span>
+                            <strong id="stats-opened-percent">0 %</strong>
+                        </div>
+                        <div class="stats-progress">
+                            <div id="stats-opened-bar"></div>
+                        </div>
+
+                        <div class="stats-breakdown-row">
+                            <span>Coffres détruits</span>
+                            <strong id="stats-destroyed-percent">0 %</strong>
+                        </div>
+                        <div class="stats-progress destroyed">
+                            <div id="stats-destroyed-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section class="page" id="profile">
+            <div class="section-heading">
+                <div>
+                    <h3>Mon profil</h3>
+                    <p>Informations de ton profil Fortnite.</p>
+                </div>
+            </div>
+            <div class="panel placeholder-panel">
+                <h3>Profil joueur</h3>
+                <p>La sélection et les informations du joueur seront connectées ici.</p>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- SÉLECTION DU JOUEUR -->
+<div id="player-selection-modal" class="player-modal hidden">
+    <div class="player-modal-content">
+
+        <div class="player-modal-header">
+            <span class="player-modal-tag">FORTNITE CHEST TRACKER</span>
+            <h2>QUI ES-TU DANS CE REPLAY ?</h2>
+            <p id="player-selection-subtitle">
+                Sélectionne ton pseudo parmi les joueurs détectés.
+            </p>
+        </div>
+
+        <div id="player-selection-list" class="player-selection-list">
+        </div>
+
+        <div class="player-modal-actions">
+            <button id="player-selection-cancel" class="secondary-button">
+                ANNULER
+            </button>
+
+            <button id="player-selection-confirm" class="primary-button" disabled>
+                CONFIRMER
+                <span>→</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
