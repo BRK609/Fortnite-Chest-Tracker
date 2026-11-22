@@ -41,11 +41,11 @@
             <div class="connection">
                 <span class="status-dot"></span>
                 <div>
-                    <strong>Tracker actif</strong>
+                    <strong id="sidebar-tracker-status">Tracker inactif</strong>
                     <small>Application locale</small>
                 </div>
             </div>
-            <div class="version">FORTNITE CHEST TRACKER · v1.4</div>
+            <div class="version">FORTNITE CHEST TRACKER · v1.5</div>
         </div>
     </aside>
 
@@ -58,7 +58,6 @@
             </div>
             <div class="top-actions">
                 <div class="live-badge"><span></span> SYSTÈME OPÉRATIONNEL</div>
-                <div class="avatar">BRK</div>
             </div>
         </header>
 
@@ -140,7 +139,6 @@
                             <p>Ton compte sélectionné</p>
                         </div>
                     </div>
-                    <div class="player-avatar">BRK</div>
                     <h2 id="player-name">Joueur non sélectionné</h2>
                     <span class="player-label">PROFIL FORTNITE</span>
                     <div class="player-divider"></div>
@@ -324,12 +322,48 @@
             <div class="section-heading">
                 <div>
                     <h3>Mon profil</h3>
-                    <p>Informations de ton profil Fortnite.</p>
+                    <p>Gère ton identité et ton joueur Fortnite.</p>
                 </div>
             </div>
-            <div class="panel placeholder-panel">
-                <h3>Profil joueur</h3>
-                <p>La sélection et les informations du joueur seront connectées ici.</p>
+
+            <div class="profile-layout">
+
+                <div class="panel profile-identity">
+
+                    <div class="profile-identity-info">
+                        <span class="profile-label">PROFIL FORTNITE</span>
+                        <h2 id="profile-username">Aucun joueur sélectionné</h2>
+                        <p id="profile-epic-id">Epic ID : Non renseigné</p>
+
+                        <span class="profile-status" id="profile-status">
+                            Profil non configuré
+                        </span>
+                    </div>
+                </div>
+
+                <div class="panel profile-management">
+                    <div class="profile-panel-heading">
+                        <h3>Gestion du profil</h3>
+                        <span>CONFIGURATION</span>
+                    </div>
+
+                    <div class="profile-info-row">
+                        <div>
+                            <strong>Joueur sélectionné</strong>
+                            <p>Joueur utilisé pour analyser tes replays.</p>
+                        </div>
+                        <span id="profile-current-player">Non configuré</span>
+                    </div>
+
+                    <div class="profile-info-row">
+                        <div>
+                            <strong>Sauvegarde du profil</strong>
+                            <p>Ton profil est conservé entre les lancements.</p>
+                        </div>
+                        <span id="profile-save-status">Non enregistré</span>
+                    </div>
+                </div>
+
             </div>
         </section>
 
