@@ -33,7 +33,7 @@ public partial class Form1 : Form
     private static string ProfilePath => AppPaths.ProfilePath;
     private static string DatabasePath => AppPaths.DatabasePath;
 
-    private const string AppVersion = "1.4";
+    private const string AppVersion = "1.5";
 
     // =========================================================
     // INTERFACE
@@ -102,9 +102,6 @@ public partial class Form1 : Form
         Font = new Font("Segoe UI", 9F);
         FormBorderStyle = FormBorderStyle.Sizable;
         DoubleBuffered = true;
-
-        BuildInterface();
-        ShowDashboard();
 
         AddLog("Interface graphique initialisée.");
         AddLog("Base de données : " + DatabasePath);
@@ -768,8 +765,6 @@ public partial class Form1 : Form
     {
         if (watcherService?.IsRunning == true)
         {
-            watcherButton.Enabled = false;
-
             try
             {
                 await watcherService.StopAsync();
@@ -780,9 +775,6 @@ public partial class Form1 : Form
             }
             finally
             {
-                if (!IsDisposed && watcherButton != null)
-                    watcherButton.Enabled = true;
-
                 SetWatcherUi(false);
             }
 
@@ -792,8 +784,6 @@ public partial class Form1 : Form
         try
         {
             watcherService ??= CreateWatcherService();
-
-            watcherButton.Enabled = false;
             watcherService.Start();
 
             SetWatcherUi(true);
@@ -809,11 +799,6 @@ public partial class Form1 : Form
                 "Fortnite Chest Tracker",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
-        }
-        finally
-        {
-            if (!IsDisposed && watcherButton != null)
-                watcherButton.Enabled = true;
         }
     }
 
@@ -1058,6 +1043,13 @@ public partial class Form1 : Form
                     playerName = string.IsNullOrWhiteSpace(currentUsername)
                         ? "Aucun joueur sélectionné"
                         : currentUsername,
+
+                    epicId = string.IsNullOrWhiteSpace(currentEpicId)
+                        ? "Epic ID indisponible"
+                        : currentEpicId,
+
+                    profileSaved = hasSavedProfile,
+
                     watcherRunning = watcherService?.IsRunning == true
                 }
             };

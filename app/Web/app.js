@@ -45,6 +45,18 @@ navigationButtons.forEach(button => {
 // DONNÉES DE L'APPLICATION
 // =====================================================
 
+function updateSidebarTracker(running) {
+    const status = document.getElementById("sidebar-tracker-status");
+    const dot = document.querySelector(".status-dot");
+
+    if (status) {
+        status.textContent = running ? "Tracker actif" : "Tracker inactif";
+    }
+
+    if (dot) {
+        dot.classList.toggle("active", running);
+    }
+}
 
 function updateDashboard(data) {
     if (!data) return;
@@ -54,9 +66,28 @@ function updateDashboard(data) {
     setText("total", formatNumber(data.opened + data.destroyed));
     setText("games", formatNumber(data.games));
 
-    if (data.playerName) {
-        setText("player-name", data.playerName);
-    }
+    // Profil Fortnite
+    const username = data.playerName || "Aucun joueur sélectionné";
+    const epicId = data.epicId || "Epic ID indisponible";
+    const profileSaved = data.profileSaved === true;
+
+    setText("player-name", username);
+    setText("profile-username", username);
+    setText("profile-epic-id", "Epic ID : " + epicId);
+    setText(
+        "profile-current-player",
+        data.playerName && data.playerName !== "Aucun joueur sélectionné"
+            ? "Sélectionné"
+            : "Non configuré"
+    );
+    setText(
+        "profile-save-status",
+        profileSaved ? "Enregistré" : "Non enregistré"
+    );
+    setText(
+        "profile-status",
+        profileSaved ? "Profil configuré" : "Profil non configuré"
+    );
 
     if (data.watcherRunning !== undefined) {
         setText(
@@ -65,6 +96,7 @@ function updateDashboard(data) {
         );
 
         updateWatcherButton(data.watcherRunning);
+        updateSidebarTracker(data.watcherRunning);
     }
 
     renderRecentActivity(data.recentActivity || []);
@@ -112,7 +144,9 @@ function renderRecentActivity(activities) {
         date.className = "activity-date";
 
         const parsedDate = new Date(
-            (activity.date || "").replace(" ", "T")
+            (activity.date || "").endsWith("Z")
+                ? activity.date
+                : (activity.date || "").replace(" ", "T") + "Z"
         );
 
         date.textContent = Number.isNaN(parsedDate.getTime())
@@ -219,6 +253,7 @@ if (window.chrome?.webview) {
 
         if (message.type === "watcherState") {
             updateWatcherButton(message.running);
+            updateSidebarTracker(message.running);
 
             setText(
                 "tracker-status",
@@ -245,6 +280,12 @@ navigateTo("dashboard");
 // =====================================================
 // SÉLECTION DU JOUEUR
 // =====================================================
+
+// Bouton de changement de joueur depuis le profil
+document.getElementById("profile-change-player")
+    ?.addEventListener("click", () => {
+        notifyHost("profileChangePlayer");
+    });
 
 let selectedPlayerIndex = null;
 
